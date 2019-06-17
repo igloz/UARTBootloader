@@ -8,8 +8,8 @@
 
  /* Если данный файл используется в проекте Atmel Studio, то файл с определениями подключен неявно
    (Не забудьте выбрать правильный тип МК в свойствах проекта).
-   В противном случае, необходимо подключить файл с определениями, соответствующими МК
-   If this file used as part of the Atmel Studio project, then definitions are included implicitely
+   В противном случае необходимо подключить файл с определениями, соответствующими МК
+   If this file used as part of the Atmel Studio project, then definitions are included implicitly
    (Do not forget to select proper MK type in the projects properties).
    Else proper file with definitions for the MCU should be included */
 // .include "m88PAdef.inc" // Atmega88PA
@@ -18,19 +18,24 @@
 // etc.
 
  /* HARDWARE_ID
-  Ровно 14 символов, которые возвращаются в ответе blst и идентифицируют оборудование. 
+  Ровно 15 символов, которые возвращаются в ответе blst и идентифицируют оборудование. 
   Сам код .db находится внизу файла UARTBootloader.asm
-  Exactly 14 symbols that returned with blst reply, to identify hardware. Place your own here.
+  Exactly 15 symbols that returned with blst reply, to identify hardware. Place your own here.
   Actual .db code is placed at the end of the UARTBootloader.asm file
 */
-#define HARDWARE_ID "AterLuxDefault"
+#define HARDWARE_ID "AterLuxDefault+"
 
 /* Определите частоту процессора
    define the CPU frequency */
-.equ F_CPU = 8000000
+.equ F_CPU = 16000000
+
+/* If UART_AUTOBAUD is used, UART speed is determined automatically by the software. In this case UART_SPEED setting is ignored.
+   Set UART_AUTOBAUD = 1 - to enable this option, UART_AUTOBAUD = 0 - to disable it.
+*/
+.equ UART_AUTOBAUD = 1
 
 /* Определите желаемую скорость UART.
-   define the desired UART frequency.
+   define the desired UART speed.
    Действительная скорость порта может отличаться от заданной, её можно вычислить по формулам ниже:
    Actual UART speed may differ from defined one. It could be calculated by the formulas below:
    X = (UART_2X==1) ? F_CPU / 8 : F_CPU / 16
@@ -52,7 +57,7 @@
 
 /* Определите UART_2X=1 чтобы использовать опцию двойной скорости для UART
    define UART_2X=1 to enable double speed option */
-.equ UART_2X = 0
+.equ UART_2X = 1
 
 /* UART_PARITY - бит чётности:
    0 - none/нет
@@ -88,18 +93,17 @@
 .equ BLINKER = 1
 .equ BLINKER_PORT = PORTB
 .equ BLINKER_DDR = DDRB
-.equ BLINKER_PIN_NUM = 4
+.equ BLINKER_PIN_NUM = 7
 
 .equ BLINKER_PATTERN_NORMAL = 0x08
 .equ BLINKER_PATTERN_READY = 0x0A
 .equ BLINKER_PATTERN_FLASHING = 0x01
 
-
 /*
   MAGIC - это специальное число которое сохраняется в одной из ячеек EEPROM.
   При запуске, загрузчик читает значение этой ячейки. Если значение отличается от заданного, то происходит запуск загрузчика, 
   а перехода к ПО не происходит. Когда начинается процесс прошивки и загружена первая страница, в указанную ячейку записывается 
-  значение 0xFF, таким образом, если процесс загрузки будет прерван, при следующем старте ПО не будет запущенно, а запустится
+  значение 0xFF, таким образом, если процесс загрузки будет прерван, при следующем старте ПО не будет запущено, а запустится
   загрузчик.
   При выходе (команда BLXT), если процесс загрузки был начат (загружена хотя бы одна страница), и если MAGIC_WRITE_WHEN_FLASHED == 1,
   то в указанную ячейку записывается указанное значение. При следующем запуске будет осуществлён переход сразу к ПО.
@@ -125,7 +129,7 @@
    Метод принудительного запуска бутлоадера при включении питания
    0 - опция принудительного запуска отключена
    1 - низкий уровень на указанном входе (включается подтягивающий резистор)
-   2 - высокий уровень на указанном входе (внешний стягивающйи резистор)
+   2 - высокий уровень на указанном входе (внешний стягивающй резистор)
    3 - два указанных вывода замкнуты между собой перемычкой
    4 - низкий уровень на обоих указанных входах (включаются подтягивающие резисторы)
 
@@ -136,7 +140,7 @@
    3 - two selected pins are coupled by a jumper
    4 - low level on both selected pins (pull-ups are enabled)
 */
-.equ FORCE_METHOD = 4
+.equ FORCE_METHOD = 3
 .equ FORCE_PORT = PORTB
 .equ FORCE_DDR = DDRB
 .equ FORCE_PIN = PINB
@@ -146,3 +150,7 @@
 .equ FORCE_DDR2 = DDRB
 .equ FORCE_PIN2 = PINB
 .equ FORCE_PIN_NUM2 = 5
+
+/* In msec
+*/
+.equ CONNECT_TIMEOUT = 1000

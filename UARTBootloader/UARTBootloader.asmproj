@@ -6,7 +6,7 @@
     <ToolchainName>com.Atmel.AVRAssembler</ToolchainName>
     <ProjectGuid>{e4c35851-2ab9-4489-8d68-dd655fa8c848}</ProjectGuid>
     <avrdeviceseries>none</avrdeviceseries>
-    <avrdevice>ATmega8A</avrdevice>
+    <avrdevice>ATmega2560</avrdevice>
     <OutputFileName>$(MSBuildProjectName)</OutputFileName>
     <OutputFileExtension>.obj</OutputFileExtension>
     <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
@@ -27,24 +27,25 @@
     <BootSegment>2</BootSegment>
     <eraseonlaunchrule>0</eraseonlaunchrule>
     <AsfFrameworkConfig>
-      <framework-data xmlns="">
+      <framework-data>
         <options />
         <configurations />
         <files />
         <documentation help="" />
         <offline-documentation help="" />
         <dependencies>
-          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.22.0" />
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.10.1" />
         </dependencies>
       </framework-data>
     </AsfFrameworkConfig>
     <avrtool />
+    <avrtoolinterface />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <ToolchainSettings>
       <AvrAssembler>
-        <avrasm.assembler.general.IncludeFile>(%24IncludeFile)</avrasm.assembler.general.IncludeFile>
-      </AvrAssembler>
+  <avrasm.assembler.general.IncludeFile>(%24IncludeFile)</avrasm.assembler.general.IncludeFile>
+</AvrAssembler>
     </ToolchainSettings>
     <OutputType>Executable</OutputType>
   </PropertyGroup>
