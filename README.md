@@ -79,7 +79,7 @@ Request to start flashing process
 
 ### BLPG
 
-Flasing a page.
+Flasing a page
 
 Before loading the first page, *BLST* command must be performed.
 It is allowed to repeately perform *BLST* command to start flashing process over again.
@@ -122,4 +122,5 @@ Finalize the flashing process and pass control to the firmware
 ## Have any questions?
 
 Write me: igloz@softick.com
+
 You could also write to the author of the original project: dmitry@aterlux.ru
