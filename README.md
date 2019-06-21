@@ -113,7 +113,7 @@ Finalize the flashing process and pass control to the firmware
 ## Discrepancies with the original AterLux project
 
 * Size of bootloader. This version occupies 1024 bytes of memory.
-* Size of flash memory of supported MCUs. This version works on MCUs with more than 64 kBytes of flash memory.
+* Size of flash memory of supported MCUs. This version can work on MCUs with more than 64 kBytes of flash memory.
 * Features. This version supports **Automatic baudrate detection** and **Connect timeout** features.
 * Number of bytes to encode page number/number of pages. Two bytes are used instead of one byte.
 * Number of bytes in *HARDWARE_ID*. The size of *HARDWARE_ID* is 15 bytes instead of 14.
