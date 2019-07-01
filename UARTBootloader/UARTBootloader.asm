@@ -3,6 +3,11 @@
  *
  *  Created: 13.03.2016
  *  Author: Dmitry Pogrebnyak (http://aterlux.ru/)
+
+ *  June 2019
+ *  Added support for MCUs with more then 64k flash memory
+ *  Added automatic baudrate detection and connnect timeout features
+ *  Author: Ihor Lozovskyi (igloz@softick.com)
  */
 
 /* Описание протокола. Все запросы начинаются с байтов  0x42 0x4C (BL), а ответы с байтов 0x62 0x6C (bl)
@@ -10,12 +15,12 @@
 
    Запрос: 0x42 0x4C 0x53 0x54 (BLST) запрос на начало работы загрузчика
    Ответ: 0x62 0x6C 0x73 0x74 psw np <fwid> (blst...)
-         psw - размер страницы флеш-памяти в словах
-         np - количество доступных для программирования страниц (не считая загрузчика)
+         psw - 1 байт размер страницы флеш-памяти в словах
+         np - 2 байта количество доступных для программирования страниц (не считая загрузчика)
          fwid - 15 символов с идентифицирующим кодом
 
-   Запрос: 0x42 0x4C 0x50 0x47 pgn <data> cc (BLPG...) загрузка и прошивка страницы с номером pgn
-         pgn - номер страницы (0 <= pgn < np)
+   Запрос: 0x42 0x4C 0x50 0x47 pgn <data> cc (BLPG...) загрузка и прошивка страницы с номером pg
+         pg - 2 байта номер страницы (0 <= pg < np)
          <data> - psw * 2 байт данных страницы
          cc - CRC с полиномом x^8 +x^7 +x^6 +x^3 +x^2 +x +1 по всем байтам в поле data, сначала старший бит, инициализированное значением 0xFF:
               cc = 0xFF;
@@ -28,26 +33,26 @@
 
          процессу загрузки должен предшествовать вызов команды BLST
          допустимо повторно вызвать BLST и начать загрузку заново
-   Ответ: 0x62 0x6C 0x70 0x67 pgn (blpg.) - OK
-          0x62 0x6C 0x65 0x72 (bler) - не совпал контрольный байт, или номер страницы отличается от ожидаемого
+   Ответ: 0x62 0x6C 0x70 0x67 pg (blpg.) - OK
+          0x62 0x6C 0x65 0x72 (bler) - не совпал контрольный байт, или недопустимый номер страницы
 
    Запрос: 0x42 0x4C 0x58 0x54 (BLXT) - завершить процесс прошивки и перейти к программе
    Ответ:  0x62 0x6C 0x78 0x74 (blxt)
 
 
-   Protocol description. All requests are started with bytes 0x42 0x4C (BL), and replies with bytes 0x62 0x6C (bl)
-   Answer 0x62 0x6C 0x65 0x72 (bler) means error (e.g. wrong command params, etc)
+   Protocol description. All requests start with the bytes 0x42 0x4C (BL), and replies start with the bytes 0x62 0x6C (bl)
+   Reply 0x62 0x6C 0x65 0x72 (bler) means error (e.g. wrong command params, etc)
 
-   Request: 0x42 0x4C 0x53 0x54 (BLST) request to start flashing process
+   Request: 0x42 0x4C 0x53 0x54 (BLST) request to start the flashing process
    Reply: 0x62 0x6C 0x73 0x74 psw np <fwid> (blst...)
-         psw - size of the flash page (in words)
-         np - number of pages available (excluding bootloader area)
+         psw - 1 byte size of the flash page (in words)
+         np - 2 bytes number of pages available (excluding area occupied by bootloader)
          fwid - 15 symbols to identify the hardware
 
-   Request: 0x42 0x4C 0x50 0x47 pgn <data> cc (BLPG...) flasing the page number pgn
-         pgn - page number (0 <= pgn < np)
+   Request: 0x42 0x4C 0x50 0x47 pg <data> cc (BLPG...) flasing a page with a number pg
+         pg - 2 bytes page number (0 <= pg < np)
          <data> - psw * 2 bytes of page data
-         cc - CRC with polinomial x^8 +x^7 +x^6 +x^3 +x^2 +x +1 over all bytes in <data> field, MSB first, initialized with 0xFF:
+         cc - CRC with polinomial x^8 +x^7 +x^6 +x^3 +x^2 +x +1 over all bytes in the <data> field, MSB first, initialized with 0xFF:
               cc = 0xFF;
               for (i = 0; i < sizeof(data); i++) {
                 cc ^= data[i];
@@ -56,12 +61,12 @@
                 }
               }
 
-         before loading the first page, BLST must be performed
-         It is allowed to repeately perform BLST to start flashing process over again
-   Reply: 0x62 0x6C 0x70 0x67 pgn (blpg.) - OK
-          0x62 0x6C 0x65 0x72 (bler) - cc byte doesn't match, or unexpected pgn value
+         before loading the first page, BLST command must be performed
+         It is allowed to repeately perform BLST command to start flashing process over again
+   Reply: 0x62 0x6C 0x70 0x67 pg (blpg.) - OK
+          0x62 0x6C 0x65 0x72 (bler) - cc byte doesn't match, or invalid pg value
 
-   Request: 0x42 0x4C 0x58 0x54 (BLXT) - finalize the flashing process and jump to the firmware
+   Request: 0x42 0x4C 0x58 0x54 (BLXT) - finalize the flashing process and pass control to the firmware
    Reply:  0x62 0x6C 0x78 0x74 (blxt)
 */
 
@@ -261,10 +266,10 @@
 // r25:r24 - круговой счётчик
 // r3:r2 - текущая страница
 
-// These are not numbers, these are bit numbers
-.equ STATE_ENTER = 0 // Сразу после входа, Blpg запрещено
-.equ STATE_READY = 1 // После Blst, программирование разрешено
-.equ STATE_FLASHING = 2 // Была выполнена хотя бы одна Blpg
+// These are bit flags
+.equ STATE_ENTER = 0 // Сразу после входа, BLPG запрещено
+.equ STATE_READY = 1 // После BLST, программирование разрешено
+.equ STATE_FLASHING = 2 // Была выполнена хотя бы одна BLPG
 .equ STATE_FORCED = 3
 
 .cseg
@@ -417,12 +422,6 @@ enter_bootloader: // r16 == 0 at this point
   ldi r24, low(CONNECT_TIMEOUT_COUNT)
   ldi r25, high(CONNECT_TIMEOUT_COUNT)
 .endif
-
-// TODO -- remove!!!
-// r25:r24, r18, r27 - don't touch!
-// r16, r17 - used by update_counter
-
-// 31:30:29:28 - free, 26 - free, 23:22:21:20 - free, 19 - free
 
 .if UART_AUTOBAUD
   ldi r16, (1 << UART_TX_PIN) | (1 << UART_RX_PIN)

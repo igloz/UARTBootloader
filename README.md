@@ -14,13 +14,13 @@ You will find **the flashing tool** here: https://github.com/igloz/UARTBootloade
 The bootloader clears this EEPROM cell at the begining of a flashing process, and at the end of this process it can either set up the value by itself or leave this task to the main firmware.
 The last option is useful to allow the firmware to complete some post-upgrade actions, and/or to ensure communication is still possible.   
 
-* **Forced start**. If a condition for the forced start is met, the bootloader doesn't pass control to the main firmware, but activates and waits for the commands. The condition can be one of
+* **Forced activation**. If a condition for the forced activation is met, the bootloader doesn't pass control to the main firmware, but activates and waits for the commands. The condition can be one of
   1. Low level on a particular input pin (pull-up enabled)
   2. High level on a particular input pin (external pull-down is required)
   3. A jumper between the two input pins
   4. Low level on the two input pins (pull-ups enabled)
 
-* **Start on call**. The bootloader activates and waits for the commands if it is called directly from the firmware. 
+* **Activate on call**. The bootloader activates and waits for the commands if it is called directly from the firmware. 
 After power-on or reset, if the condition from the list above is not met (or the corresponding check is disabled), the bootloader passes control to the main firmware.
 
 * **Connect timeout**. After power-on or reset the bootloader activates and waits for the commands until a specified timeout elapses.
@@ -35,7 +35,7 @@ If the timeout elapses and there are no commands, the bootloader passes control 
 1. Open the project in *Atmel Studio*.
 2. Go to project properties, *Device* tab, and *Change Device* according to yours.
 3. Open ***default_definitions.inc*** file and change the definitions as you need:
-  * *HARDWARE_ID* - Exactly 15 characters that will be returned with the blst reply to identify a hardware. I recommend to use a combination of your nickname and the device name. For example: *"JhnSmithBlinker"*.
+  * *HARDWARE_ID* - exactly 15 characters that will be returned with the blst reply to identify a hardware. I recommend to use a combination of your nickname and the device name. For example: *"JhnSmithBlinker"*.
   * *F_CPU* - define the CPU frequency, as it is set by the hardware and the fuse settings.
   * *UART_AUTOBAUD* - detect UART speed automatically: 1 - enabled, 0 - disabled.
   * *UART_SPEED* - define the desired UART speed. Note: not all speeds are exactly supported. Refer to the MCU datasheet.
@@ -51,11 +51,11 @@ If the timeout elapses and there are no commands, the bootloader passes control 
   * *MAGIC_WRITE_WHEN_FLASHED* - 1 - if the bootloader should write the value by itself, 0 - if it would be performed by the main firmware.
   * *MAGIC_EEPROM_ADDRESS* - the address in EEPROM where the magic value is stored.
 
-  * *FORCE_METHOD* - a method for the forced start: 0 - disabled, 1 - low level, 2 - high level (requires external pull-down), 3 - a jumper between the two pins, 4 - low level on the two pins.
+  * *FORCE_METHOD* - a method for the forced activation: 0 - disabled, 1 - low level, 2 - high level (requires external pull-down), 3 - a jumper between the two pins, 4 - low level on the two pins.
   * *FORCE_PORT*, *FORCE_DDR*, *FORCE_PIN*, *FORCE_PIN_NUM* - the I/O registers and the bit number to access the pin.
   * *FORCE_PORT2*, *FORCE_DDR2*, *FORCE_PIN2*, *FORCE_PIN_NUM2* - the same for the second pin, for the methods 3 and 4.
 
-  * *CONNECT_TIMEOUT* - number of milliseconds to wait for the commands after power-on or reset before passing the control to the main firmware. Set to 0 to disable this feature.
+  * *CONNECT_TIMEOUT* - a number of milliseconds to wait for the commands after power-on or reset before passing the control to the main firmware. Set to 0 to disable this feature.
 4. Setup the MCU fuses:
   * Select BOOTSZ bits to match the 512 words (1024 bytes) bootloader size.
   * Set BOOTRST fuse bit (i.e. make it value equal to 0) - that makes the MCU to execute the bootloader first after reset.
@@ -63,12 +63,12 @@ If the timeout elapses and there are no commands, the bootloader passes control 
 
 ## Protocol description. 
 
-All requests start with the bytes *0x42 0x4C* (**BL**), and replies start with the bytes *0x62 0x6C* (**bl**)
+All requests start with the bytes *0x42 0x4C* (**BL**), and replies start with the bytes *0x62 0x6C* (**bl**).
 Reply *0x62 0x6C 0x65 0x72* (**bler**) means error (e.g. wrong command params, etc)
    
 ### BLST
 
-Request to start flashing process
+Request to start the flashing process
 
 **Request:** *0x42 0x4C 0x53 0x54* (**BLST**) 
 
